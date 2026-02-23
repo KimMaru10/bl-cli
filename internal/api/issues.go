@@ -196,3 +196,40 @@ func (c *Client) UpdateIssue(issueIDOrKey string, opts *UpdateIssueOptions) (*Is
 	}
 	return &updated, nil
 }
+
+// AddComment adds a comment to an issue.
+func (c *Client) AddComment(issueIDOrKey string, content string) (*Comment, error) {
+	params := url.Values{}
+	params.Set("content", content)
+
+	data, err := c.post("/issues/"+issueIDOrKey+"/comments", params)
+	if err != nil {
+		return nil, fmt.Errorf("コメントの追加に失敗しました: %w", err)
+	}
+	var comment Comment
+	if err := json.Unmarshal(data, &comment); err != nil {
+		return nil, fmt.Errorf("コメントの解析に失敗しました: %w", err)
+	}
+	return &comment, nil
+}
+
+// GetComments returns comments for an issue.
+func (c *Client) GetComments(issueIDOrKey string, count int, order string) ([]Comment, error) {
+	params := url.Values{}
+	if count > 0 {
+		params.Set("count", strconv.Itoa(count))
+	}
+	if order != "" {
+		params.Set("order", order)
+	}
+
+	data, err := c.get("/issues/"+issueIDOrKey+"/comments", params)
+	if err != nil {
+		return nil, fmt.Errorf("コメント一覧の取得に失敗しました: %w", err)
+	}
+	var comments []Comment
+	if err := json.Unmarshal(data, &comments); err != nil {
+		return nil, fmt.Errorf("コメント一覧の解析に失敗しました: %w", err)
+	}
+	return comments, nil
+}
