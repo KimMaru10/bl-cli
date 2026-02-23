@@ -70,3 +70,16 @@ func (c *Client) GetIssues(opts *GetIssuesOptions) ([]Issue, error) {
 	}
 	return issues, nil
 }
+
+// GetIssue returns a single issue by key or ID.
+func (c *Client) GetIssue(issueIDOrKey string) (*Issue, error) {
+	data, err := c.get("/issues/"+issueIDOrKey, nil)
+	if err != nil {
+		return nil, fmt.Errorf("課題の取得に失敗しました: %w", err)
+	}
+	var issue Issue
+	if err := json.Unmarshal(data, &issue); err != nil {
+		return nil, fmt.Errorf("課題の解析に失敗しました: %w", err)
+	}
+	return &issue, nil
+}
