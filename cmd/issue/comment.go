@@ -156,7 +156,13 @@ func newCommentListCmd() *cobra.Command {
 				}
 
 				if c.Content != "" {
-					fmt.Println(labelStyle.Render("comment") + "：" + c.Content)
+					prefix := labelStyle.Render("comment") + "："
+					contentLines := strings.Split(c.Content, "\n")
+					fmt.Println(prefix + contentLines[0])
+					indent := strings.Repeat(" ", lipgloss.Width(prefix))
+					for _, l := range contentLines[1:] {
+						fmt.Println(indent + l)
+					}
 				}
 
 				if i < len(comments)-1 {
