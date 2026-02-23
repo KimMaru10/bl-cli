@@ -60,10 +60,18 @@ type Priority struct {
 
 // Comment represents a Backlog comment.
 type Comment struct {
-	ID          int    `json:"id"`
-	Content     string `json:"content"`
-	CreatedUser *User  `json:"createdUser"`
-	Created     string `json:"created"`
+	ID          int          `json:"id"`
+	Content     string       `json:"content"`
+	CreatedUser *User        `json:"createdUser"`
+	Created     string       `json:"created"`
+	ChangeLog   []ChangeLog  `json:"changeLog"`
+}
+
+// ChangeLog represents a field change in a comment.
+type ChangeLog struct {
+	Field         string `json:"field"`
+	NewValue      string `json:"newValue"`
+	OriginalValue string `json:"originalValue"`
 }
 
 // Milestone represents a Backlog milestone/version.
