@@ -83,3 +83,55 @@ func (c *Client) GetIssue(issueIDOrKey string) (*Issue, error) {
 	}
 	return &issue, nil
 }
+
+// CreateIssueOptions holds parameters for CreateIssue.
+type CreateIssueOptions struct {
+	ProjectID   int
+	Summary     string
+	IssueTypeID int
+	PriorityID  int
+	Description string
+	AssigneeID  int
+	DueDate     string
+	StartDate   string
+	MilestoneIDs []int
+	CategoryIDs  []int
+}
+
+// CreateIssue creates a new issue.
+func (c *Client) CreateIssue(opts *CreateIssueOptions) (*Issue, error) {
+	params := url.Values{}
+	params.Set("projectId", strconv.Itoa(opts.ProjectID))
+	params.Set("summary", opts.Summary)
+	params.Set("issueTypeId", strconv.Itoa(opts.IssueTypeID))
+	params.Set("priorityId", strconv.Itoa(opts.PriorityID))
+
+	if opts.Description != "" {
+		params.Set("description", opts.Description)
+	}
+	if opts.AssigneeID > 0 {
+		params.Set("assigneeId", strconv.Itoa(opts.AssigneeID))
+	}
+	if opts.DueDate != "" {
+		params.Set("dueDate", opts.DueDate)
+	}
+	if opts.StartDate != "" {
+		params.Set("startDate", opts.StartDate)
+	}
+	for _, id := range opts.MilestoneIDs {
+		params.Add("milestoneId[]", strconv.Itoa(id))
+	}
+	for _, id := range opts.CategoryIDs {
+		params.Add("categoryId[]", strconv.Itoa(id))
+	}
+
+	data, err := c.post("/issues", params)
+	if err != nil {
+		return nil, fmt.Errorf("課題の作成に失敗しました: %w", err)
+	}
+	var issue Issue
+	if err := json.Unmarshal(data, &issue); err != nil {
+		return nil, fmt.Errorf("課題の解析に失敗しました: %w", err)
+	}
+	return &issue, nil
+}
