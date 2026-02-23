@@ -1,0 +1,29 @@
+# Binary
+bl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go
+vendor/
+
+# Environment
+.env
+.env.local
+
+# Docs (local only)
+docs/
+
+# Distribution
+dist/
+
+# Test
+coverage.out
