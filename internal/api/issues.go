@@ -135,3 +135,64 @@ func (c *Client) CreateIssue(opts *CreateIssueOptions) (*Issue, error) {
 	}
 	return &issue, nil
 }
+
+// UpdateIssueOptions holds parameters for UpdateIssue.
+// Pointer types are used to distinguish between unset and zero values.
+type UpdateIssueOptions struct {
+	Summary      *string
+	Description  *string
+	StatusID     *int
+	AssigneeID   *int
+	PriorityID   *int
+	DueDate      *string
+	StartDate    *string
+	MilestoneIDs []int
+	CategoryIDs  []int
+	Comment      *string
+}
+
+// UpdateIssue updates an existing issue.
+func (c *Client) UpdateIssue(issueIDOrKey string, opts *UpdateIssueOptions) (*Issue, error) {
+	params := url.Values{}
+
+	if opts.Summary != nil {
+		params.Set("summary", *opts.Summary)
+	}
+	if opts.Description != nil {
+		params.Set("description", *opts.Description)
+	}
+	if opts.StatusID != nil {
+		params.Set("statusId", strconv.Itoa(*opts.StatusID))
+	}
+	if opts.AssigneeID != nil {
+		params.Set("assigneeId", strconv.Itoa(*opts.AssigneeID))
+	}
+	if opts.PriorityID != nil {
+		params.Set("priorityId", strconv.Itoa(*opts.PriorityID))
+	}
+	if opts.DueDate != nil {
+		params.Set("dueDate", *opts.DueDate)
+	}
+	if opts.StartDate != nil {
+		params.Set("startDate", *opts.StartDate)
+	}
+	for _, id := range opts.MilestoneIDs {
+		params.Add("milestoneId[]", strconv.Itoa(id))
+	}
+	for _, id := range opts.CategoryIDs {
+		params.Add("categoryId[]", strconv.Itoa(id))
+	}
+	if opts.Comment != nil {
+		params.Set("comment", *opts.Comment)
+	}
+
+	data, err := c.patch("/issues/"+issueIDOrKey, params)
+	if err != nil {
+		return nil, fmt.Errorf("課題の更新に失敗しました: %w", err)
+	}
+	var updated Issue
+	if err := json.Unmarshal(data, &updated); err != nil {
+		return nil, fmt.Errorf("課題の解析に失敗しました: %w", err)
+	}
+	return &updated, nil
+}
