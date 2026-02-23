@@ -19,16 +19,6 @@ archives:
         format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
-brews:
-  - repository:
-      owner: KimMaru10
-      name: homebrew-bl-cli
-    name: bl-cli
-    homepage: https://github.com/KimMaru10/bl-cli
-    description: "Backlog CLI - ターミナルから Backlog を操作"
-    install: |
-      bin.install "bl"
-
 changelog:
   sort: asc
   filters:
