@@ -1,0 +1,25 @@
+# Go source
+cmd/
+internal/
+main.go
+go.mod
+go.sum
+
+# Build artifacts
+bl
+dist/
+
+# Config
+docs/
+.github/
+.goreleaser.yaml
+Makefile
+CLAUDE.md
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/

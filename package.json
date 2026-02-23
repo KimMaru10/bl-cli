@@ -1,0 +1,19 @@
+{
+  "name": "bl-cli",
+  "version": "0.1.0",
+  "description": "Backlog CLI - ターミナルから Backlog を操作",
+  "bin": {
+    "bl": "./bin/bl"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KimMaru10/bl-cli.git"
+  },
+  "keywords": ["backlog", "cli", "nulab"],
+  "author": "KimMaru10",
+  "license": "MIT",
+  "homepage": "https://github.com/KimMaru10/bl-cli"
+}
