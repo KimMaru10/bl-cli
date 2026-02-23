@@ -134,6 +134,7 @@ func newCommentListCmd() *cobra.Command {
 			}
 
 			changeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+			labelStyle := lipgloss.NewStyle().Bold(true)
 
 			for i, c := range comments {
 				userName := ""
@@ -146,16 +147,16 @@ func newCommentListCmd() *cobra.Command {
 				// Show change logs
 				for _, cl := range c.ChangeLog {
 					if cl.OriginalValue != "" && cl.NewValue != "" {
-						fmt.Println(changeStyle.Render(fmt.Sprintf("  %s: %s → %s", cl.Field, cl.OriginalValue, cl.NewValue)))
+						fmt.Println(changeStyle.Render(fmt.Sprintf("  %s：%s → %s", cl.Field, cl.OriginalValue, cl.NewValue)))
 					} else if cl.NewValue != "" {
-						fmt.Println(changeStyle.Render(fmt.Sprintf("  %s: → %s", cl.Field, cl.NewValue)))
+						fmt.Println(changeStyle.Render(fmt.Sprintf("  %s：→ %s", cl.Field, cl.NewValue)))
 					} else if cl.OriginalValue != "" {
-						fmt.Println(changeStyle.Render(fmt.Sprintf("  %s: %s →", cl.Field, cl.OriginalValue)))
+						fmt.Println(changeStyle.Render(fmt.Sprintf("  %s：%s →", cl.Field, cl.OriginalValue)))
 					}
 				}
 
 				if c.Content != "" {
-					fmt.Println(c.Content)
+					fmt.Println(labelStyle.Render("comment") + "：" + c.Content)
 				}
 
 				if i < len(comments)-1 {
