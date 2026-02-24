@@ -37,21 +37,20 @@ $ bl issue view --web
 
 ## インストール
 
-### Homebrew
+### npm（推奨）
 
 ```bash
-brew tap <org>/bl-cli
-brew install bl-cli
+npm install -g @kimmaru10/bl-cli
 ```
 
 ### GitHub Releases
 
-[Releases](https://github.com/<org>/bl-cli/releases) からお使いの OS に合ったバイナリをダウンロードしてください。
+[Releases](https://github.com/KimMaru10/bl-cli/releases) からお使いの OS に合ったバイナリをダウンロードしてください。
 
 ### Go
 
 ```bash
-go install github.com/<org>/bl-cli@latest
+go install github.com/KimMaru10/bl-cli@latest
 ```
 
 ## セットアップ
@@ -185,7 +184,7 @@ default_project: MYPROJ
 
 ```bash
 # クローン
-git clone https://github.com/<org>/bl-cli.git
+git clone https://github.com/KimMaru10/bl-cli.git
 cd bl-cli
 
 # ビルド
