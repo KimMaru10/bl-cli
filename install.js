@@ -6,7 +6,7 @@ const os = require("os");
 
 const REPO = "KimMaru10/bl-cli";
 const BIN_DIR = path.join(__dirname, "bin");
-const BIN_PATH = path.join(BIN_DIR, "bl");
+const BIN_PATH = path.join(BIN_DIR, "bl-binary");
 
 function getPlatform() {
   const platform = os.platform();
@@ -74,8 +74,10 @@ async function install() {
   try {
     if (ext === "zip") {
       execSync(`unzip -o -j "${tmpFile}" bl -d "${BIN_DIR}"`, { stdio: "pipe" });
+      fs.renameSync(path.join(BIN_DIR, "bl"), BIN_PATH);
     } else {
       execSync(`tar -xzf "${tmpFile}" -C "${BIN_DIR}" bl`, { stdio: "pipe" });
+      fs.renameSync(path.join(BIN_DIR, "bl"), BIN_PATH);
     }
 
     fs.chmodSync(BIN_PATH, 0o755);
