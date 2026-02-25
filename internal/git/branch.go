@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var issueKeyPattern = regexp.MustCompile(`[A-Z][A-Z0-9]+-\d+`)
+var issueKeyPattern = regexp.MustCompile(`[A-Z][A-Z0-9_]+-\d+`)
 
 // GetCurrentBranch returns the current git branch name.
 func GetCurrentBranch() (string, error) {

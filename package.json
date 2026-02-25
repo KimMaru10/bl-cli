@@ -1,6 +1,6 @@
 {
   "name": "@kimmaru10/bl-cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Backlog CLI - ターミナルから Backlog を操作",
   "bin": {
     "bl": "./bin/bl.js"
