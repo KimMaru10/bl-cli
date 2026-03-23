@@ -116,7 +116,9 @@ func newSetCmd() *cobra.Command {
 				return nil
 			}
 
-			cfg.DefaultProject = result.selected
+			space := cfg.Spaces[cfg.CurrentSpace]
+			space.DefaultProject = result.selected
+			cfg.Spaces[cfg.CurrentSpace] = space
 			if err := config.Save(cfg); err != nil {
 				return fmt.Errorf("設定の保存に失敗しました: %w", err)
 			}

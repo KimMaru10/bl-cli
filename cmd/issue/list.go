@@ -45,16 +45,18 @@ func newListCmd() *cobra.Command {
 				return err
 			}
 
+			space := cfg.Current()
+
 			projectKey := project
 			if projectKey == "" {
-				projectKey = cfg.DefaultProject
+				projectKey = space.DefaultProject
 			}
 			if projectKey == "" {
 				return fmt.Errorf("プロジェクトを指定してください（--project または bl project set）")
 			}
 
 			if web {
-				url := cfg.SpaceURL + "/find/" + projectKey
+				url := space.SpaceURL + "/find/" + projectKey
 				return browser.Open(url)
 			}
 
