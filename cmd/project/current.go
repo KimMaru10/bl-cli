@@ -17,12 +17,13 @@ func newCurrentCmd() *cobra.Command {
 				return fmt.Errorf("設定の読み込みに失敗しました: %w", err)
 			}
 
-			if cfg.DefaultProject == "" {
+			space := cfg.Current()
+			if space == nil || space.DefaultProject == "" {
 				fmt.Println("デフォルトプロジェクトが未設定です。bl project set を実行してください")
 				return nil
 			}
 
-			fmt.Println(cfg.DefaultProject)
+			fmt.Println(space.DefaultProject)
 			return nil
 		},
 	}

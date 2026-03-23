@@ -8,13 +8,7 @@ import (
 	"github.com/KimMaru10/bl-cli/internal/config"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-)
-
-var (
-	successStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
-	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 )
 
 type loginStep int
@@ -22,6 +16,7 @@ type loginStep int
 const (
 	stepSpaceURL loginStep = iota
 	stepAPIKey
+	stepAlias
 	stepDone
 )
 
@@ -32,7 +27,7 @@ type loginModel struct {
 	quitting bool
 }
 
-func newLoginModel() loginModel {
+func newLoginModel(suggestedAlias string) loginModel {
 	spaceInput := textinput.New()
 	spaceInput.Placeholder = "https://myteam.backlog.com"
 	spaceInput.Focus()
@@ -45,9 +40,14 @@ func newLoginModel() loginModel {
 	apiKeyInput.EchoMode = textinput.EchoPassword
 	apiKeyInput.Prompt = "API キー: "
 
+	aliasInput := textinput.New()
+	aliasInput.Placeholder = suggestedAlias
+	aliasInput.Width = 50
+	aliasInput.Prompt = "スペースのエイリアス名: "
+
 	return loginModel{
 		step:   stepSpaceURL,
-		inputs: []textinput.Model{spaceInput, apiKeyInput},
+		inputs: []textinput.Model{spaceInput, apiKeyInput, aliasInput},
 	}
 }
 
@@ -63,13 +63,23 @@ func (m loginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		case tea.KeyEnter:
-			if m.step == stepSpaceURL {
+			switch m.step {
+			case stepSpaceURL:
 				m.step = stepAPIKey
 				m.inputs[0].Blur()
 				m.inputs[1].Focus()
 				return m, textinput.Blink
-			}
-			if m.step == stepAPIKey {
+			case stepAPIKey:
+				// Derive suggested alias from URL for placeholder
+				spaceURL := strings.TrimRight(strings.TrimSpace(m.inputs[0].Value()), "/")
+				suggested := config.ExtractAlias(spaceURL)
+				m.inputs[2].Placeholder = suggested
+
+				m.step = stepAlias
+				m.inputs[1].Blur()
+				m.inputs[2].Focus()
+				return m, textinput.Blink
+			case stepAlias:
 				m.step = stepDone
 				return m, tea.Quit
 			}
@@ -92,6 +102,10 @@ func (m loginModel) View() string {
 		b.WriteString(m.inputs[1].View())
 		b.WriteString("\n")
 	}
+	if m.step >= stepAlias {
+		b.WriteString(m.inputs[2].View())
+		b.WriteString("\n")
+	}
 
 	return b.String()
 }
@@ -99,9 +113,9 @@ func (m loginModel) View() string {
 func newLoginCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "login",
-		Short: "Backlog に認証する",
+		Short: "Backlog スペースを追加認証する",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			m := newLoginModel()
+			m := newLoginModel("myteam")
 			p := tea.NewProgram(m)
 			finalModel, err := p.Run()
 			if err != nil {
@@ -115,12 +129,19 @@ func newLoginCmd() *cobra.Command {
 
 			spaceURL := strings.TrimRight(strings.TrimSpace(result.inputs[0].Value()), "/")
 			apiKey := strings.TrimSpace(result.inputs[1].Value())
+			alias := strings.TrimSpace(result.inputs[2].Value())
 
 			if spaceURL == "" || apiKey == "" {
 				fmt.Println(errorStyle.Render("✗ スペースURLとAPIキーは必須です"))
 				return nil
 			}
 
+			// Use suggested alias if empty
+			if alias == "" {
+				alias = config.ExtractAlias(spaceURL)
+			}
+
+			// Validate credentials
 			client := api.NewClient(spaceURL, apiKey)
 			user, err := client.GetMyself()
 			if err != nil {
@@ -128,21 +149,31 @@ func newLoginCmd() *cobra.Command {
 				return nil
 			}
 
-			cfg := &config.Config{
-				SpaceURL: spaceURL,
-				APIKey:   apiKey,
+			// Load existing config and add/update space
+			cfg, _ := config.Load()
+			if cfg.Spaces == nil {
+				cfg.Spaces = make(map[string]config.SpaceConfig)
 			}
 
-			existing, _ := config.Load()
-			if existing != nil && existing.DefaultProject != "" {
-				cfg.DefaultProject = existing.DefaultProject
+			cfg.Spaces[alias] = config.SpaceConfig{
+				SpaceURL:       spaceURL,
+				APIKey:         apiKey,
+				DefaultProject: cfg.Spaces[alias].DefaultProject, // preserve existing default_project
+			}
+
+			// Set as current if it's the first space or no current is set
+			if cfg.CurrentSpace == "" || len(cfg.Spaces) == 1 {
+				cfg.CurrentSpace = alias
 			}
 
 			if err := config.Save(cfg); err != nil {
 				return fmt.Errorf("設定の保存に失敗しました: %w", err)
 			}
 
-			fmt.Println(successStyle.Render("✔ " + user.Name + " として認証しました"))
+			fmt.Println(successStyle.Render(fmt.Sprintf("✔ %s として認証しました（スペース: %s）", user.Name, alias)))
+			if cfg.CurrentSpace == alias {
+				fmt.Println(infoStyle.Render("  現在のスペースに設定されました"))
+			}
 			return nil
 		},
 	}

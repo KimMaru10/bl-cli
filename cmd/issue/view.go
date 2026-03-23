@@ -51,8 +51,10 @@ func newViewCmd() *cobra.Command {
 				return err
 			}
 
+			space := cfg.Current()
+
 			if web {
-				url := cfg.SpaceURL + "/view/" + issueKey
+				url := space.SpaceURL + "/view/" + issueKey
 				return browser.Open(url)
 			}
 
@@ -114,7 +116,7 @@ func newViewCmd() *cobra.Command {
 
 			// URL
 			fmt.Println()
-			fmt.Println(labelStyle.Render("URL: ") + urlStyle.Render(cfg.SpaceURL+"/view/"+issue.IssueKey))
+			fmt.Println(labelStyle.Render("URL: ") + urlStyle.Render(space.SpaceURL+"/view/"+issue.IssueKey))
 
 			return nil
 		},
