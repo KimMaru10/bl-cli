@@ -203,6 +203,31 @@ spaces:
 | `bl issue edit` | 課題を更新 |
 | `bl issue comment` | コメントを追加 |
 | `bl issue comment list` | コメント一覧 |
+| `bl mcp` | MCP サーバーを起動 |
+| `bl mcp setup` | Claude Desktop に MCP サーバーを登録 |
+
+## Claude Desktop 連携（MCP）
+
+Claude Desktop から Backlog の課題を直接操作できます。
+
+```bash
+# Claude Desktop に自動登録
+bl mcp setup
+```
+
+セットアップ後、Claude Desktop を再起動すると以下のツールが使えるようになります：
+
+| ツール | 機能 |
+|--------|------|
+| `project_list` | プロジェクト一覧 |
+| `issue_list` | 課題一覧（ステータス・キーワード・担当者で絞り込み） |
+| `issue_view` | 課題詳細 |
+| `issue_create` | 課題作成 |
+| `issue_edit` | 課題更新 |
+| `comment_add` | コメント追加 |
+| `comment_list` | コメント一覧 |
+
+Claude Desktop で「Backlog の課題一覧を見せて」のように話しかけると、自動的にツールが呼ばれます。
 
 ## 開発
 
