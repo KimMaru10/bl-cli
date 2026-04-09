@@ -33,6 +33,7 @@ $ bl issue view --web
 - **ブランチ名から課題キーを自動推測** — `feature/PROJ-123-xxx` ブランチにいれば、課題キーの入力を省略できる
 - **インタラクティブ UI** — プロジェクトや担当者をリストから選択。課題キーを覚えていなくても操作可能
 - **`--web` でブラウザ連携** — ターミナルからワンコマンドで Backlog の Web UI を開ける
+- **複数スペース対応** — 複数の Backlog スペースをエイリアスで一元管理。ワンコマンドで切り替え
 - **シングルバイナリ** — Go 製。依存なしでインストール・配布が簡単
 
 ## インストール
@@ -65,6 +66,21 @@ API キーは Backlog の「個人設定 > API」から発行できます。
 ```bash
 # デフォルトプロジェクトを設定（インタラクティブに選択）
 bl project set
+```
+
+### 複数スペースの管理
+
+複数の Backlog スペースを登録して切り替えることができます。
+
+```bash
+# 2 つ目のスペースを追加
+bl auth login
+
+# スペースを切り替え（インタラクティブに選択）
+bl auth switch
+
+# 現在の認証状態を確認
+bl auth status
 ```
 
 ## 使い方
@@ -158,9 +174,16 @@ $ bl issue comment --body "完了"   # PROJ-123 にコメント
 設定ファイルは `~/.config/bl/config.yaml` に保存されます。
 
 ```yaml
-space_url: https://myteam.backlog.com
-api_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-default_project: MYPROJ
+current_space: myteam
+spaces:
+  myteam:
+    space_url: https://myteam.backlog.com
+    api_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    default_project: MYPROJ
+  other-team:
+    space_url: https://other-team.backlog.com
+    api_key: YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+    default_project: OTHER
 ```
 
 ## コマンド一覧
@@ -170,6 +193,7 @@ default_project: MYPROJ
 | `bl auth login` | 認証情報を設定 |
 | `bl auth logout` | 認証情報を削除 |
 | `bl auth status` | 認証状態を確認 |
+| `bl auth switch` | スペースを切り替え |
 | `bl project list` | プロジェクト一覧 |
 | `bl project set` | デフォルトプロジェクトを設定 |
 | `bl project current` | 現在のデフォルトプロジェクトを表示 |
