@@ -19,6 +19,7 @@ func newCreateCmd() *cobra.Command {
 		priority    string
 		assignee    string
 		description string
+		startDate   string
 		dueDate     string
 		milestone   string
 		project     string
@@ -60,6 +61,7 @@ func newCreateCmd() *cobra.Command {
 
 				opts.Summary = summary
 				opts.Description = description
+				opts.StartDate = startDate
 				opts.DueDate = dueDate
 
 				issueTypes, err := client.GetIssueTypes(projectKey)
@@ -170,8 +172,32 @@ func newCreateCmd() *cobra.Command {
 					opts.AssigneeID = selected.ID
 				}
 
+				// Milestone
+				milestones, err := client.GetMilestones(projectKey)
+				if err != nil {
+					return err
+				}
+				msItems := []tui.SelectItem{{ID: 0, Label: "未設定"}}
+				for _, m := range milestones {
+					msItems = append(msItems, tui.SelectItem{ID: m.ID, Label: m.Name})
+				}
+				selected = tui.Select("マイルストーンを選択", msItems)
+				if selected == nil {
+					return nil
+				}
+				if selected.ID > 0 {
+					opts.MilestoneIDs = []int{selected.ID}
+				}
+
+				// Start date
+				sd, ok := tui.Input("開始日 (空欄で省略): ", "yyyy-MM-dd")
+				if !ok {
+					return nil
+				}
+				opts.StartDate = sd
+
 				// Due date
-				d, ok := tui.Input("期日 (yyyy-MM-dd, 空欄で省略): ", "2025-12-31")
+				d, ok := tui.Input("期日 (空欄で省略): ", "yyyy-MM-dd")
 				if !ok {
 					return nil
 				}
@@ -206,6 +232,7 @@ func newCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&priority, "priority", "", "優先度名")
 	cmd.Flags().StringVarP(&assignee, "assignee", "a", "", "担当者名")
 	cmd.Flags().StringVarP(&description, "description", "d", "", "説明")
+	cmd.Flags().StringVar(&startDate, "start-date", "", "開始日（yyyy-MM-dd）")
 	cmd.Flags().StringVar(&dueDate, "due-date", "", "期日（yyyy-MM-dd）")
 	cmd.Flags().StringVarP(&milestone, "milestone", "m", "", "マイルストーン名")
 	cmd.Flags().StringVarP(&project, "project", "p", "", "プロジェクトキー")
