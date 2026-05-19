@@ -17,6 +17,7 @@ func newEditCmd() *cobra.Command {
 	var (
 		status    string
 		assignee  string
+		startDate string
 		dueDate   string
 		priority  string
 		milestone string
@@ -49,8 +50,9 @@ func newEditCmd() *cobra.Command {
 			_ = cfg
 
 			hasFlags := cmd.Flags().Changed("status") || cmd.Flags().Changed("assignee") ||
-				cmd.Flags().Changed("due-date") || cmd.Flags().Changed("priority") ||
-				cmd.Flags().Changed("milestone") || cmd.Flags().Changed("comment")
+				cmd.Flags().Changed("start-date") || cmd.Flags().Changed("due-date") ||
+				cmd.Flags().Changed("priority") || cmd.Flags().Changed("milestone") ||
+				cmd.Flags().Changed("comment")
 
 			opts := &api.UpdateIssueOptions{}
 
@@ -83,6 +85,10 @@ func newEditCmd() *cobra.Command {
 							break
 						}
 					}
+				}
+
+				if startDate != "" {
+					opts.StartDate = strPtr(startDate)
 				}
 
 				if dueDate != "" {
@@ -129,6 +135,7 @@ func newEditCmd() *cobra.Command {
 					{ID: 3, Label: "期日を変更"},
 					{ID: 4, Label: "優先度を変更"},
 					{ID: 5, Label: "マイルストーンを変更"},
+					{ID: 6, Label: "開始日を変更"},
 				}
 
 				selected := tui.Select("編集項目を選択", editItems)
@@ -223,6 +230,16 @@ func newEditCmd() *cobra.Command {
 					} else {
 						opts.MilestoneIDs = []int{}
 					}
+
+				case 6: // Start date
+					current := currentIssue.StartDate
+					val, ok := tui.Input(fmt.Sprintf("開始日 (現在: %s): ", current), "yyyy-MM-dd")
+					if !ok {
+						return nil
+					}
+					if val != "" {
+						opts.StartDate = strPtr(val)
+					}
 				}
 
 				if !tui.Confirm("この内容で更新しますか？") {
@@ -243,6 +260,7 @@ func newEditCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&status, "status", "", "ステータス名")
 	cmd.Flags().StringVarP(&assignee, "assignee", "a", "", "担当者名")
+	cmd.Flags().StringVar(&startDate, "start-date", "", "開始日（yyyy-MM-dd）")
 	cmd.Flags().StringVar(&dueDate, "due-date", "", "期日（yyyy-MM-dd）")
 	cmd.Flags().StringVar(&priority, "priority", "", "優先度名")
 	cmd.Flags().StringVarP(&milestone, "milestone", "m", "", "マイルストーン名")
