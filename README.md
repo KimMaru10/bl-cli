@@ -79,6 +79,9 @@ bl auth login
 # スペースを切り替え（インタラクティブに選択）
 bl auth switch
 
+# スペースを切り替え（エイリアス指定、非対話）
+bl auth switch myteam
+
 # 現在の認証状態を確認
 bl auth status
 ```

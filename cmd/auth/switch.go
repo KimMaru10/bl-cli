@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/KimMaru10/bl-cli/internal/config"
 	"github.com/charmbracelet/bubbles/list"
@@ -80,8 +81,9 @@ func (m switchModel) View() string {
 
 func newSwitchCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "switch",
+		Use:   "switch [alias]",
 		Short: "使用するスペースを切り替える",
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load()
 			if err != nil {
@@ -89,8 +91,15 @@ func newSwitchCmd() *cobra.Command {
 			}
 
 			if len(cfg.Spaces) == 0 {
+				if len(args) == 1 {
+					return fmt.Errorf("登録されたスペースがありません。bl auth login を実行してください")
+				}
 				fmt.Println(errorStyle.Render("✗ 登録されたスペースがありません。bl auth login を実行してください"))
 				return nil
+			}
+
+			if len(args) == 1 {
+				return switchToAlias(cfg, args[0])
 			}
 
 			if len(cfg.Spaces) == 1 {
@@ -135,4 +144,19 @@ func newSwitchCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// switchToAlias switches the current space to alias without launching the TUI.
+func switchToAlias(cfg *config.Config, alias string) error {
+	if _, ok := cfg.Spaces[alias]; !ok {
+		return fmt.Errorf("スペース '%s' が見つかりません（登録済み: %s）", alias, strings.Join(cfg.SpaceNames(), ", "))
+	}
+
+	cfg.CurrentSpace = alias
+	if err := config.Save(cfg); err != nil {
+		return fmt.Errorf("設定の保存に失敗しました: %w", err)
+	}
+
+	fmt.Println(successStyle.Render("✔ スペースを " + alias + " に切り替えました"))
+	return nil
 }
