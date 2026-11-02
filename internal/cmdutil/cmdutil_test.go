@@ -3,7 +3,9 @@ package cmdutil
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/KimMaru10/bl-cli/internal/api"
 	"github.com/KimMaru10/bl-cli/internal/config"
@@ -102,5 +104,24 @@ func TestResolveProjectKey(t *testing.T) {
 	}
 	if _, err := ResolveProjectKey(&config.Config{}, ""); err == nil {
 		t.Error("no space: want error")
+	}
+}
+
+func TestSaveFileHiddenAndLongNames(t *testing.T) {
+	dir := t.TempDir()
+	if p, _ := SaveFile(dir, ".bashrc", "f", nil); p != filepath.Join(dir, "bashrc") {
+		t.Errorf("leading dot: saved to %s", p)
+	}
+	long := strings.Repeat("あ", 200) + ".png" // 600+ bytes
+	p, err := SaveFile(dir, long, "f", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := filepath.Base(p)
+	if len(base) > maxNameBytes || !strings.HasSuffix(base, ".png") || !utf8.ValidString(base) {
+		t.Errorf("long name: got %q (%d bytes)", base, len(base))
+	}
+	if p, _ := SaveFile(dir, "invoice‮fdp.exe", "f", nil); filepath.Base(p) != "invoicefdp.exe" {
+		t.Errorf("bidi override: saved to %s", p)
 	}
 }

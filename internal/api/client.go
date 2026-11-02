@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // Client is the Backlog API client.
@@ -18,13 +18,20 @@ type Client struct {
 	httpClient *http.Client
 }
 
+// transport waits at most a minute for response headers; bodies (downloads) are not time-limited.
+var transport = func() *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.ResponseHeaderTimeout = time.Minute
+	return t
+}()
+
 // NewClient creates a new Backlog API client.
 func NewClient(spaceURL, apiKey string) *Client {
 	base := strings.TrimRight(spaceURL, "/") + "/api/v2"
 	return &Client{
 		baseURL:    base,
 		apiKey:     apiKey,
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Transport: transport},
 	}
 }
 
@@ -67,10 +74,10 @@ func (c *Client) do(method, path string, params url.Values, body io.Reader) (*ht
 
 	if resp.StatusCode >= 400 {
 		defer resp.Body.Close()
-		respBody, _ := io.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 
 		var errResp BacklogErrorResponse
-		if json.Unmarshal(respBody, &errResp) == nil && len(errResp.Errors) > 0 {
+		if decode(respBody, &errResp) == nil && len(errResp.Errors) > 0 {
 			// Feature disabled for the space (e.g. Git on some plans).
 			if strings.HasPrefix(errResp.Errors[0].Message, "msg.featureRestrictedError") {
 				return nil, fmt.Errorf("このスペースでは利用できない機能です（%s）", errResp.Errors[0].Message)

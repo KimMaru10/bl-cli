@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -13,7 +12,7 @@ func (c *Client) GetMyself() (*User, error) {
 	}
 
 	var user User
-	if err := json.Unmarshal(data, &user); err != nil {
+	if err := decode(data, &user); err != nil {
 		return nil, fmt.Errorf("ユーザー情報の解析に失敗しました: %w", err)
 	}
 	return &user, nil

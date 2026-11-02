@@ -26,7 +26,7 @@ type CustomField struct {
 
 // DisplayValue renders the custom field value as plain text.
 func (f CustomField) DisplayValue() string {
-	return displayRaw(f.Value)
+	return StripControl(displayRaw(f.Value))
 }
 
 func displayRaw(raw json.RawMessage) string {

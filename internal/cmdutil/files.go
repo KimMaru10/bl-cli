@@ -6,23 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
 
 	"github.com/KimMaru10/bl-cli/internal/api"
 )
 
-// StripControl removes terminal control characters (ESC, CR, C0/C1, DEL)
-// from server-supplied text, keeping newlines and tabs.
+// StripControl removes terminal control and bidi/format characters (see api.StripControl).
 func StripControl(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r == '\n' || r == '\t' {
-			return r
-		}
-		if unicode.IsControl(r) {
-			return -1
-		}
-		return r
-	}, s)
+	return api.StripControl(s)
 }
 
 // SaveFile writes data into dir using only a sanitized base name of name,
@@ -33,9 +23,12 @@ func SaveFile(dir, name, fallback string, data []byte) (string, error) {
 	clean := strings.ReplaceAll(StripControl(name), "\n", "")
 	clean = strings.ReplaceAll(clean, "\t", "")
 	base := filepath.Base(filepath.Clean("/" + strings.ReplaceAll(clean, "\\", "/")))
-	if base == "/" || base == "." || base == ".." || base == "" {
+	// Leading dots would create hidden files such as .bashrc.
+	base = strings.TrimLeft(base, ".")
+	if base == "/" || base == "" {
 		base = fallback
 	}
+	base = truncateName(base, maxNameBytes)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", fmt.Errorf("保存先フォルダの作成に失敗しました: %w", err)
 	}
@@ -95,4 +88,28 @@ func DownloadAttachments(attachments []api.Attachment, id int, output string, dl
 		return fmt.Errorf("添付ファイル ID %d はありません", id)
 	}
 	return nil
+}
+
+// maxNameBytes keeps names (plus a " (n)" suffix) under the common 255-byte limit.
+const maxNameBytes = 200
+
+// truncateName shortens name to at most max bytes on a rune boundary, keeping the extension.
+func truncateName(name string, max int) string {
+	if len(name) <= max {
+		return name
+	}
+	ext := filepath.Ext(name)
+	if len(ext) > max/2 {
+		ext = ""
+	}
+	stem := strings.TrimSuffix(name, ext)
+	limit := max - len(ext)
+	cut := 0
+	for i := range stem {
+		if i > limit {
+			break
+		}
+		cut = i
+	}
+	return stem[:cut] + ext
 }

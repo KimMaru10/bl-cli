@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -36,7 +35,7 @@ func (c *Client) getJSON(path string, params url.Values, out any, what string) e
 	if err != nil {
 		return fmt.Errorf("%sの取得に失敗しました: %w", what, err)
 	}
-	if err := json.Unmarshal(data, out); err != nil {
+	if err := decode(data, out); err != nil {
 		return fmt.Errorf("%sの解析に失敗しました: %w", what, err)
 	}
 	return nil
