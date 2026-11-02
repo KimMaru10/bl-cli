@@ -99,6 +99,12 @@ bl issue list --status "処理中"
 
 # マイルストーンで絞り込み
 bl issue list --milestone "v1.0"
+
+# キーワード検索（件名・説明・コメント）
+bl issue list --keyword "ヘッダー"
+
+# 子課題の一覧
+bl issue list --parent PROJ-100
 ```
 
 ### 課題の詳細
@@ -112,6 +118,52 @@ bl issue view
 
 # ブラウザで開く
 bl issue view --web
+```
+
+開始日・カテゴリ・親課題・カスタム属性・添付ファイルも表示します。
+
+### 添付ファイル
+
+```bash
+# 一覧
+bl issue attachment PROJ-123
+
+# 全件ダウンロード / ID を指定してダウンロード
+bl issue attachment PROJ-123 --download --output ./files
+bl issue attachment PROJ-123 --download --id 12345
+```
+
+### ドキュメント・Wiki・共有ファイル
+
+```bash
+# ドキュメント
+bl doc tree                       # ツリー（ID 付き）
+bl doc list --keyword "仕様"       # 一覧・検索
+bl doc view <documentId>          # 本文を表示
+bl doc attachment <documentId>    # 添付ファイルをダウンロード
+
+# Wiki
+bl wiki list --keyword "手順"
+bl wiki view <wikiId>
+
+# 共有ファイル
+bl file list /仕様書/
+bl file download <fileId> --output ./files
+```
+
+### Backlog Git
+
+```bash
+bl repo list
+bl pr list --repo my-repo
+bl pr view 12 --repo my-repo
+```
+
+### プロジェクトの設定値
+
+```bash
+# ステータス・課題種別・カテゴリ・マイルストーンの ID と名前
+bl project meta
 ```
 
 ### 課題の作成
@@ -200,12 +252,19 @@ spaces:
 | `bl project list` | プロジェクト一覧 |
 | `bl project set` | デフォルトプロジェクトを設定 |
 | `bl project current` | 現在のデフォルトプロジェクトを表示 |
+| `bl project meta` | ステータス・課題種別・カテゴリ・マイルストーンの一覧 |
 | `bl issue list` | 課題一覧 |
 | `bl issue view` | 課題の詳細を表示 |
 | `bl issue create` | 課題を作成 |
 | `bl issue edit` | 課題を更新 |
 | `bl issue comment` | コメントを追加 |
 | `bl issue comment list` | コメント一覧 |
+| `bl issue attachment` | 添付ファイルの一覧・ダウンロード |
+| `bl doc tree` / `list` / `view` / `attachment` | ドキュメントの参照 |
+| `bl wiki list` / `view` | Wiki の参照 |
+| `bl file list` / `download` | 共有ファイルの参照 |
+| `bl repo list` | Backlog Git リポジトリ一覧 |
+| `bl pr list` / `view` | Backlog Git プルリクエストの参照 |
 | `bl mcp` | MCP サーバーを起動 |
 | `bl mcp setup` | Claude Desktop に MCP サーバーを登録 |
 

@@ -24,3 +24,14 @@ func LoadConfigAndClient() (*config.Config, *api.Client, error) {
 	client := api.NewClient(space.SpaceURL, space.APIKey)
 	return cfg, client, nil
 }
+
+// ResolveProjectKey returns the --project flag value or the default project.
+func ResolveProjectKey(cfg *config.Config, flag string) (string, error) {
+	if flag != "" {
+		return flag, nil
+	}
+	if space := cfg.Current(); space != nil && space.DefaultProject != "" {
+		return space.DefaultProject, nil
+	}
+	return "", fmt.Errorf("プロジェクトを指定してください（--project または bl project set）")
+}

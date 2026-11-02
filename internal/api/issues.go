@@ -13,6 +13,7 @@ type GetIssuesOptions struct {
 	AssigneeIDs  []int
 	StatusIDs    []int
 	MilestoneIDs []int
+	ParentIDs    []int
 	Keyword      string
 	Count        int
 	Offset       int
@@ -35,6 +36,9 @@ func (c *Client) GetIssues(opts *GetIssuesOptions) ([]Issue, error) {
 	}
 	for _, id := range opts.MilestoneIDs {
 		params.Add("milestoneId[]", strconv.Itoa(id))
+	}
+	for _, id := range opts.ParentIDs {
+		params.Add("parentIssueId[]", strconv.Itoa(id))
 	}
 	if opts.Keyword != "" {
 		params.Set("keyword", opts.Keyword)
@@ -86,14 +90,14 @@ func (c *Client) GetIssue(issueIDOrKey string) (*Issue, error) {
 
 // CreateIssueOptions holds parameters for CreateIssue.
 type CreateIssueOptions struct {
-	ProjectID   int
-	Summary     string
-	IssueTypeID int
-	PriorityID  int
-	Description string
-	AssigneeID  int
-	DueDate     string
-	StartDate   string
+	ProjectID    int
+	Summary      string
+	IssueTypeID  int
+	PriorityID   int
+	Description  string
+	AssigneeID   int
+	DueDate      string
+	StartDate    string
 	MilestoneIDs []int
 	CategoryIDs  []int
 }
