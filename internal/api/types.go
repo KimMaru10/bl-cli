@@ -18,22 +18,26 @@ type Project struct {
 
 // Issue represents a Backlog issue.
 type Issue struct {
-	ID          int        `json:"id"`
-	ProjectID   int        `json:"projectId"`
-	IssueKey    string     `json:"issueKey"`
-	Summary     string     `json:"summary"`
-	Description string     `json:"description"`
-	Status      *Status    `json:"status"`
-	Assignee    *User      `json:"assignee"`
-	Priority    *Priority  `json:"priority"`
-	IssueType   *IssueType `json:"issueType"`
-	DueDate     string     `json:"dueDate"`
-	StartDate   string     `json:"startDate"`
-	CreatedUser *User      `json:"createdUser"`
-	Created     string     `json:"created"`
-	Updated     string     `json:"updated"`
+	ID          int         `json:"id"`
+	ProjectID   int         `json:"projectId"`
+	IssueKey    string      `json:"issueKey"`
+	Summary     string      `json:"summary"`
+	Description string      `json:"description"`
+	Status      *Status     `json:"status"`
+	Assignee    *User       `json:"assignee"`
+	Priority    *Priority   `json:"priority"`
+	IssueType   *IssueType  `json:"issueType"`
+	DueDate     string      `json:"dueDate"`
+	StartDate   string      `json:"startDate"`
+	CreatedUser *User       `json:"createdUser"`
+	Created     string      `json:"created"`
+	Updated     string      `json:"updated"`
 	Milestone   []Milestone `json:"milestone"`
 	Category    []Category  `json:"category"`
+	// ParentIssueID is nil when the issue has no parent.
+	ParentIssueID *int          `json:"parentIssueId"`
+	CustomFields  []CustomField `json:"customFields"`
+	Attachments   []Attachment  `json:"attachments"`
 }
 
 // IssueType represents a Backlog issue type.
@@ -60,11 +64,11 @@ type Priority struct {
 
 // Comment represents a Backlog comment.
 type Comment struct {
-	ID          int          `json:"id"`
-	Content     string       `json:"content"`
-	CreatedUser *User        `json:"createdUser"`
-	Created     string       `json:"created"`
-	ChangeLog   []ChangeLog  `json:"changeLog"`
+	ID          int         `json:"id"`
+	Content     string      `json:"content"`
+	CreatedUser *User       `json:"createdUser"`
+	Created     string      `json:"created"`
+	ChangeLog   []ChangeLog `json:"changeLog"`
 }
 
 // ChangeLog represents a field change in a comment.

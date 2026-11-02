@@ -2,9 +2,13 @@ package cmd
 
 import (
 	"github.com/KimMaru10/bl-cli/cmd/auth"
+	"github.com/KimMaru10/bl-cli/cmd/doc"
+	"github.com/KimMaru10/bl-cli/cmd/file"
+	blgit "github.com/KimMaru10/bl-cli/cmd/git"
 	"github.com/KimMaru10/bl-cli/cmd/issue"
 	blmcp "github.com/KimMaru10/bl-cli/cmd/mcp"
 	"github.com/KimMaru10/bl-cli/cmd/project"
+	"github.com/KimMaru10/bl-cli/cmd/wiki"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +21,11 @@ func init() {
 	rootCmd.AddCommand(auth.NewAuthCmd())
 	rootCmd.AddCommand(project.NewProjectCmd())
 	rootCmd.AddCommand(issue.NewIssueCmd())
+	rootCmd.AddCommand(doc.NewDocCmd())
+	rootCmd.AddCommand(wiki.NewWikiCmd())
+	rootCmd.AddCommand(blgit.NewRepoCmd())
+	rootCmd.AddCommand(blgit.NewPRCmd())
+	rootCmd.AddCommand(file.NewFileCmd())
 	mcpCmd := &cobra.Command{
 		Use:   "mcp",
 		Short: "Claude Desktop 連携（MCP サーバー）",

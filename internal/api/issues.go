@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -13,6 +12,7 @@ type GetIssuesOptions struct {
 	AssigneeIDs  []int
 	StatusIDs    []int
 	MilestoneIDs []int
+	ParentIDs    []int
 	Keyword      string
 	Count        int
 	Offset       int
@@ -35,6 +35,9 @@ func (c *Client) GetIssues(opts *GetIssuesOptions) ([]Issue, error) {
 	}
 	for _, id := range opts.MilestoneIDs {
 		params.Add("milestoneId[]", strconv.Itoa(id))
+	}
+	for _, id := range opts.ParentIDs {
+		params.Add("parentIssueId[]", strconv.Itoa(id))
 	}
 	if opts.Keyword != "" {
 		params.Set("keyword", opts.Keyword)
@@ -65,7 +68,7 @@ func (c *Client) GetIssues(opts *GetIssuesOptions) ([]Issue, error) {
 	}
 
 	var issues []Issue
-	if err := json.Unmarshal(data, &issues); err != nil {
+	if err := decode(data, &issues); err != nil {
 		return nil, fmt.Errorf("課題一覧の解析に失敗しました: %w", err)
 	}
 	return issues, nil
@@ -78,7 +81,7 @@ func (c *Client) GetIssue(issueIDOrKey string) (*Issue, error) {
 		return nil, fmt.Errorf("課題の取得に失敗しました: %w", err)
 	}
 	var issue Issue
-	if err := json.Unmarshal(data, &issue); err != nil {
+	if err := decode(data, &issue); err != nil {
 		return nil, fmt.Errorf("課題の解析に失敗しました: %w", err)
 	}
 	return &issue, nil
@@ -86,14 +89,14 @@ func (c *Client) GetIssue(issueIDOrKey string) (*Issue, error) {
 
 // CreateIssueOptions holds parameters for CreateIssue.
 type CreateIssueOptions struct {
-	ProjectID   int
-	Summary     string
-	IssueTypeID int
-	PriorityID  int
-	Description string
-	AssigneeID  int
-	DueDate     string
-	StartDate   string
+	ProjectID    int
+	Summary      string
+	IssueTypeID  int
+	PriorityID   int
+	Description  string
+	AssigneeID   int
+	DueDate      string
+	StartDate    string
 	MilestoneIDs []int
 	CategoryIDs  []int
 }
@@ -130,7 +133,7 @@ func (c *Client) CreateIssue(opts *CreateIssueOptions) (*Issue, error) {
 		return nil, fmt.Errorf("課題の作成に失敗しました: %w", err)
 	}
 	var issue Issue
-	if err := json.Unmarshal(data, &issue); err != nil {
+	if err := decode(data, &issue); err != nil {
 		return nil, fmt.Errorf("課題の解析に失敗しました: %w", err)
 	}
 	return &issue, nil
@@ -191,7 +194,7 @@ func (c *Client) UpdateIssue(issueIDOrKey string, opts *UpdateIssueOptions) (*Is
 		return nil, fmt.Errorf("課題の更新に失敗しました: %w", err)
 	}
 	var updated Issue
-	if err := json.Unmarshal(data, &updated); err != nil {
+	if err := decode(data, &updated); err != nil {
 		return nil, fmt.Errorf("課題の解析に失敗しました: %w", err)
 	}
 	return &updated, nil
@@ -207,7 +210,7 @@ func (c *Client) AddComment(issueIDOrKey string, content string) (*Comment, erro
 		return nil, fmt.Errorf("コメントの追加に失敗しました: %w", err)
 	}
 	var comment Comment
-	if err := json.Unmarshal(data, &comment); err != nil {
+	if err := decode(data, &comment); err != nil {
 		return nil, fmt.Errorf("コメントの解析に失敗しました: %w", err)
 	}
 	return &comment, nil
@@ -228,7 +231,7 @@ func (c *Client) GetComments(issueIDOrKey string, count int, order string) ([]Co
 		return nil, fmt.Errorf("コメント一覧の取得に失敗しました: %w", err)
 	}
 	var comments []Comment
-	if err := json.Unmarshal(data, &comments); err != nil {
+	if err := decode(data, &comments); err != nil {
 		return nil, fmt.Errorf("コメント一覧の解析に失敗しました: %w", err)
 	}
 	return comments, nil

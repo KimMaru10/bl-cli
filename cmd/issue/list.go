@@ -32,6 +32,8 @@ func newListCmd() *cobra.Command {
 		status    string
 		milestone string
 		project   string
+		keyword   string
+		parent    string
 		count     int
 		web       bool
 	)
@@ -47,12 +49,9 @@ func newListCmd() *cobra.Command {
 
 			space := cfg.Current()
 
-			projectKey := project
-			if projectKey == "" {
-				projectKey = space.DefaultProject
-			}
-			if projectKey == "" {
-				return fmt.Errorf("プロジェクトを指定してください（--project または bl project set）")
+			projectKey, err := cmdutil.ResolveProjectKey(cfg, project)
+			if err != nil {
+				return err
 			}
 
 			if web {
@@ -68,8 +67,17 @@ func newListCmd() *cobra.Command {
 			opts := &api.GetIssuesOptions{
 				ProjectIDs: []int{proj.ID},
 				Count:      count,
+				Keyword:    keyword,
 				Sort:       "updated",
 				Order:      "desc",
+			}
+
+			if parent != "" {
+				p, err := client.GetIssue(parent)
+				if err != nil {
+					return err
+				}
+				opts.ParentIDs = []int{p.ID}
 			}
 
 			if assignee == "@me" {
@@ -161,6 +169,8 @@ func newListCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&status, "status", "s", "", "ステータス名")
 	cmd.Flags().StringVarP(&milestone, "milestone", "m", "", "マイルストーン名")
 	cmd.Flags().StringVarP(&project, "project", "p", "", "プロジェクトキー")
+	cmd.Flags().StringVarP(&keyword, "keyword", "k", "", "キーワード（件名・説明・コメントを検索）")
+	cmd.Flags().StringVar(&parent, "parent", "", "親課題のキー（子課題を一覧）")
 	cmd.Flags().IntVarP(&count, "count", "c", 20, "表示件数")
 	cmd.Flags().BoolVarP(&web, "web", "w", false, "ブラウザで開く")
 

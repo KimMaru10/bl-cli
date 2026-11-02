@@ -2,8 +2,10 @@ package issue
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
+	"github.com/KimMaru10/bl-cli/internal/api"
 	"github.com/KimMaru10/bl-cli/internal/browser"
 	"github.com/KimMaru10/bl-cli/internal/cmdutil"
 	"github.com/KimMaru10/bl-cli/internal/git"
@@ -12,9 +14,9 @@ import (
 )
 
 var (
-	titleStyle   = lipgloss.NewStyle().Bold(true)
-	labelStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	urlStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Underline(true)
+	titleStyle = lipgloss.NewStyle().Bold(true)
+	labelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	urlStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Underline(true)
 )
 
 // resolveIssueKey resolves an issue key from args or the current git branch.
@@ -108,10 +110,52 @@ func newViewCmd() *cobra.Command {
 				fmt.Println(labelStyle.Render("マイルストーン: ") + strings.Join(names, ", "))
 			}
 
+			// Start date
+			if issue.StartDate != "" {
+				fmt.Println(labelStyle.Render("開始日: ") + issue.StartDate)
+			}
+
+			// Categories
+			if len(issue.Category) > 0 {
+				var names []string
+				for _, c := range issue.Category {
+					names = append(names, c.Name)
+				}
+				fmt.Println(labelStyle.Render("カテゴリ: ") + strings.Join(names, ", "))
+			}
+
+			// Parent issue
+			if issue.ParentIssueID != nil {
+				parent := strconv.Itoa(*issue.ParentIssueID)
+				if p, err := client.GetIssue(parent); err == nil {
+					parent = p.IssueKey + " " + cmdutil.StripControl(p.Summary)
+				} else {
+					parent = "ID " + parent + "（取得できませんでした）"
+				}
+				fmt.Println(labelStyle.Render("親課題: ") + parent)
+			}
+
+			// Custom fields (only those with a value)
+			for _, f := range issue.CustomFields {
+				if v := f.DisplayValue(); v != "" {
+					fmt.Println(labelStyle.Render(cmdutil.StripControl(f.Name)+": ") + cmdutil.StripControl(v))
+				}
+			}
+
+			fmt.Println(labelStyle.Render("作成: ") + issue.Created + labelStyle.Render("  更新: ") + issue.Updated)
+
+			// Attachments
+			if len(issue.Attachments) > 0 {
+				fmt.Println(labelStyle.Render("添付ファイル:"))
+				for _, a := range issue.Attachments {
+					fmt.Printf("  %d\t%s\t%s\n", a.ID, cmdutil.StripControl(a.Name), api.HumanSize(a.Size))
+				}
+			}
+
 			// Description
 			if issue.Description != "" {
 				fmt.Println()
-				fmt.Println(issue.Description)
+				fmt.Println(cmdutil.StripControl(issue.Description))
 			}
 
 			// URL
