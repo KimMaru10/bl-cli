@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -55,6 +56,11 @@ func (c *Client) do(method, path string, params url.Values, body io.Reader) (*ht
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		// *url.Error embeds the full URL, which contains the API key.
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			err = ue.Err
+		}
 		return nil, fmt.Errorf("リクエストの送信に失敗しました: %w", err)
 	}
 
