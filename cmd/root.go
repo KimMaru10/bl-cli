@@ -46,6 +46,7 @@ func init() {
 // SetVersion sets the version string shown by --version.
 func SetVersion(v string) {
 	rootCmd.Version = v
+	blmcp.Version = v
 }
 
 // Execute runs the root command.

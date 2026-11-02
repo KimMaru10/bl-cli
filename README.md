@@ -54,6 +54,8 @@ npm install -g @kimmaru10/bl-cli
 go install github.com/KimMaru10/bl-cli@latest
 ```
 
+Go 1.26 以上が必要です（Go 1.21 以降なら必要なツールチェインが自動で取得されます）。
+
 ## セットアップ
 
 ```bash
