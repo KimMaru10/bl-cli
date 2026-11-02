@@ -89,11 +89,14 @@ type commentListArgs struct {
 	Count    int    `json:"count,omitempty" jsonschema:"取得件数（デフォルト20）"`
 }
 
+// Version is reported to MCP clients. It is set from the CLI version at startup.
+var Version = "dev"
+
 // Run starts the MCP server over stdio.
 func Run() {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "bl-backlog",
-		Version: "0.2.1",
+		Version: Version,
 	}, nil)
 
 	registerTools(server)
