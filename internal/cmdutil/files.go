@@ -62,9 +62,11 @@ func SaveFile(dir, name, fallback string, data []byte) (string, error) {
 	return "", fmt.Errorf("同名のファイルが多すぎて保存できません: %s", base)
 }
 
-// DownloadAttachments saves the attachments (all of them, or only id when non-zero)
-// using dl, and prints each saved path.
-func DownloadAttachments(attachments []api.Attachment, id int, output string, dl func(int) (string, []byte, error)) error {
+// SaveAttachments saves the attachments (all of them, or only id when non-zero)
+// into output and returns the saved paths, including those saved before an error.
+// It never writes to stdout, which is the protocol channel of the MCP server.
+func SaveAttachments(attachments []api.Attachment, id int, output string, dl func(int) (string, []byte, error)) ([]string, error) {
+	var paths []string
 	found := false
 	for _, a := range attachments {
 		if id != 0 && a.ID != id {
@@ -73,21 +75,30 @@ func DownloadAttachments(attachments []api.Attachment, id int, output string, dl
 		found = true
 		name, data, err := dl(a.ID)
 		if err != nil {
-			return err
+			return paths, err
 		}
 		if name == "" {
 			name = a.Name
 		}
 		path, err := SaveFile(output, name, fmt.Sprintf("attachment-%d", a.ID), data)
 		if err != nil {
-			return err
+			return paths, err
 		}
-		fmt.Println(path)
+		paths = append(paths, path)
 	}
 	if !found {
-		return fmt.Errorf("添付ファイル ID %d はありません", id)
+		return paths, fmt.Errorf("添付ファイル ID %d はありません", id)
 	}
-	return nil
+	return paths, nil
+}
+
+// DownloadAttachments saves the attachments like SaveAttachments and prints the saved paths.
+func DownloadAttachments(attachments []api.Attachment, id int, output string, dl func(int) (string, []byte, error)) error {
+	paths, err := SaveAttachments(attachments, id, output, dl)
+	for _, path := range paths {
+		fmt.Println(path)
+	}
+	return err
 }
 
 // maxNameBytes keeps names (plus a " (n)" suffix) under the common 255-byte limit.

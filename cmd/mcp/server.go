@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 
 	"github.com/KimMaru10/bl-cli/internal/api"
 	"github.com/KimMaru10/bl-cli/internal/config"
@@ -12,15 +13,25 @@ import (
 )
 
 func newClient() (*api.Client, string, error) {
+	client, defaultProject, _, err := resolveClient()
+	return client, defaultProject, err
+}
+
+// resolveClient also returns the alias of the space the client talks to, so a
+// write can report the space it really used.
+func resolveClient() (*api.Client, string, string, error) {
 	cfg, err := config.Load()
 	if err != nil {
-		return nil, "", fmt.Errorf("設定の読み込みに失敗しました: %w", err)
+		return nil, "", "", fmt.Errorf("設定の読み込みに失敗しました: %w", err)
 	}
-	space := cfg.Current()
+	alias, space := resolveSpace(cfg)
 	if space == nil {
-		return nil, "", fmt.Errorf("認証されていません。先に bl auth login を実行してください")
+		if alias != "" && len(cfg.Spaces) > 0 {
+			return nil, "", "", fmt.Errorf("選択中のスペース「%s」が設定にありません。auth_status で確認し、auth_switch で選び直してください", alias)
+		}
+		return nil, "", "", fmt.Errorf("認証されていません。先に bl auth login を実行してください")
 	}
-	return api.NewClient(space.SpaceURL, space.APIKey), space.DefaultProject, nil
+	return api.NewClient(space.SpaceURL, space.APIKey), space.DefaultProject, alias, nil
 }
 
 func textResult(v any) (*mcp.CallToolResult, any, error) {
@@ -52,12 +63,17 @@ type issueListArgs struct {
 	ProjectKey string `json:"project_key,omitempty" jsonschema:"プロジェクトキー（省略時はデフォルトプロジェクト）"`
 	Status     string `json:"status,omitempty" jsonschema:"ステータスで絞り込み（例：処理中、完了）"`
 	AssigneeMe bool   `json:"assignee_me,omitempty" jsonschema:"自分にアサインされた課題のみ"`
-	Keyword    string `json:"keyword,omitempty" jsonschema:"キーワード検索"`
+	Assignee   string `json:"assignee,omitempty" jsonschema:"担当者名で絞り込み（@me で自分）"`
+	Milestone  string `json:"milestone,omitempty" jsonschema:"マイルストーン名で絞り込み"`
+	Parent     string `json:"parent,omitempty" jsonschema:"親課題のキー（子課題を一覧）"`
+	Keyword    string `json:"keyword,omitempty" jsonschema:"キーワード検索（件名・説明・コメント）"`
 	Count      int    `json:"count,omitempty" jsonschema:"取得件数（デフォルト20、最大100）"`
+	Web        bool   `json:"web,omitempty" jsonschema:"一覧を返す代わりにブラウザで課題検索画面を開く"`
 }
 
 type issueViewArgs struct {
 	IssueKey string `json:"issue_key" jsonschema:"課題キー（例：PROJ-123）"`
+	Web      bool   `json:"web,omitempty" jsonschema:"詳細を返す代わりにブラウザで課題を開く"`
 }
 
 type issueCreateArgs struct {
@@ -68,6 +84,8 @@ type issueCreateArgs struct {
 	Description  string `json:"description,omitempty" jsonschema:"課題の詳細"`
 	AssigneeName string `json:"assignee_name,omitempty" jsonschema:"担当者名"`
 	DueDate      string `json:"due_date,omitempty" jsonschema:"期日（yyyy-MM-dd）"`
+	StartDate    string `json:"start_date,omitempty" jsonschema:"開始日（yyyy-MM-dd）"`
+	Milestone    string `json:"milestone,omitempty" jsonschema:"マイルストーン名"`
 }
 
 type issueEditArgs struct {
@@ -76,6 +94,10 @@ type issueEditArgs struct {
 	AssigneeName string `json:"assignee_name,omitempty" jsonschema:"担当者名"`
 	Priority     string `json:"priority,omitempty" jsonschema:"優先度名"`
 	DueDate      string `json:"due_date,omitempty" jsonschema:"期日（yyyy-MM-dd）"`
+	StartDate    string `json:"start_date,omitempty" jsonschema:"開始日（yyyy-MM-dd）"`
+	Milestone    string `json:"milestone,omitempty" jsonschema:"マイルストーン名"`
+	Unassign     bool   `json:"unassign,omitempty" jsonschema:"担当者を未設定に戻す"`
+	ClearDueDate bool   `json:"clear_due_date,omitempty" jsonschema:"期日を消す"`
 	Comment      string `json:"comment,omitempty" jsonschema:"更新時のコメント"`
 }
 
@@ -116,7 +138,7 @@ func registerTools(server *mcp.Server) {
 	// issue_list
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "issue_list",
-		Description: "Backlog の課題一覧を取得する。ステータスやキーワードで絞り込み可能",
+		Description: "Backlog の課題一覧を更新順に取得する。ステータス・担当者・マイルストーン・親課題・キーワードで絞り込み可能",
 	}, handleIssueList)
 
 	// issue_view
@@ -148,6 +170,9 @@ func registerTools(server *mcp.Server) {
 		Name:        "comment_list",
 		Description: "Backlog の課題のコメント一覧を取得する",
 	}, handleCommentList)
+
+	registerReadTools(server)
+	registerSettingsTools(server)
 }
 
 // --- Handlers ---
@@ -186,6 +211,10 @@ func handleIssueList(ctx context.Context, req *mcp.CallToolRequest, args issueLi
 		return errResult("project_key を指定してください（デフォルトプロジェクトが未設定です）")
 	}
 
+	if args.Web {
+		return openInBrowser("/find/" + url.PathEscape(projectKey))
+	}
+
 	project, err := client.GetProject(projectKey)
 	if err != nil {
 		return errResult(err.Error())
@@ -194,14 +223,46 @@ func handleIssueList(ctx context.Context, req *mcp.CallToolRequest, args issueLi
 	opts := &api.GetIssuesOptions{
 		ProjectIDs: []int{project.ID},
 		Count:      args.Count,
+		Sort:       "updated",
+		Order:      "desc",
 	}
 
-	if args.AssigneeMe {
+	if args.AssigneeMe || args.Assignee == "@me" {
 		me, err := client.GetMyself()
 		if err != nil {
 			return errResult(err.Error())
 		}
 		opts.AssigneeIDs = []int{me.ID}
+	} else if args.Assignee != "" {
+		users, err := client.GetProjectUsers(projectKey)
+		if err != nil {
+			return errResult(err.Error())
+		}
+		for _, u := range users {
+			if u.Name == args.Assignee {
+				opts.AssigneeIDs = []int{u.ID}
+				break
+			}
+		}
+		if opts.AssigneeIDs == nil {
+			return errResult(fmt.Sprintf("担当者「%s」が見つかりません", args.Assignee))
+		}
+	}
+
+	if args.Milestone != "" {
+		id, err := milestoneID(client, projectKey, args.Milestone)
+		if err != nil {
+			return errResult(err.Error())
+		}
+		opts.MilestoneIDs = []int{id}
+	}
+
+	if args.Parent != "" {
+		parent, err := client.GetIssue(args.Parent)
+		if err != nil {
+			return errResult(err.Error())
+		}
+		opts.ParentIDs = []int{parent.ID}
 	}
 
 	if args.Status != "" {
@@ -214,6 +275,10 @@ func handleIssueList(ctx context.Context, req *mcp.CallToolRequest, args issueLi
 				opts.StatusIDs = []int{s.ID}
 				break
 			}
+		}
+		// An unknown name must not silently widen the result to every status.
+		if opts.StatusIDs == nil {
+			return errResult(fmt.Sprintf("ステータス「%s」が見つかりません", args.Status))
 		}
 	}
 
@@ -260,11 +325,18 @@ func handleIssueView(ctx context.Context, req *mcp.CallToolRequest, args issueVi
 	if err != nil {
 		return errResult(err.Error())
 	}
+	if args.Web {
+		return openInBrowser("/view/" + url.PathEscape(args.IssueKey))
+	}
 	issue, err := client.GetIssue(args.IssueKey)
 	if err != nil {
 		return errResult(err.Error())
 	}
 
+	type customField struct {
+		Name  string `json:"name"`
+		Value string `json:"value"`
+	}
 	type result struct {
 		Key         string   `json:"key"`
 		Summary     string   `json:"summary"`
@@ -279,6 +351,11 @@ func handleIssueView(ctx context.Context, req *mcp.CallToolRequest, args issueVi
 		Updated     string   `json:"updated"`
 		Milestones  []string `json:"milestones,omitempty"`
 		Categories  []string `json:"categories,omitempty"`
+		CreatedUser string   `json:"created_user,omitempty"`
+		Parent      string   `json:"parent,omitempty"`
+
+		CustomFields []customField    `json:"custom_fields,omitempty"`
+		Attachments  []attachmentInfo `json:"attachments,omitempty"`
 	}
 
 	r := result{
@@ -308,12 +385,27 @@ func handleIssueView(ctx context.Context, req *mcp.CallToolRequest, args issueVi
 	for _, c := range issue.Category {
 		r.Categories = append(r.Categories, c.Name)
 	}
+	if issue.CreatedUser != nil {
+		r.CreatedUser = issue.CreatedUser.Name
+	}
+	if issue.ParentIssueID != nil {
+		r.Parent = fmt.Sprintf("ID %d（取得できませんでした）", *issue.ParentIssueID)
+		if p, err := client.GetIssue(fmt.Sprintf("%d", *issue.ParentIssueID)); err == nil {
+			r.Parent = p.IssueKey + " " + p.Summary
+		}
+	}
+	for _, f := range issue.CustomFields {
+		if v := f.DisplayValue(); v != "" {
+			r.CustomFields = append(r.CustomFields, customField{Name: f.Name, Value: v})
+		}
+	}
+	r.Attachments = attachmentInfos(issue.Attachments)
 
 	return textResult(r)
 }
 
 func handleIssueCreate(ctx context.Context, req *mcp.CallToolRequest, args issueCreateArgs) (*mcp.CallToolResult, any, error) {
-	client, defaultProject, err := newClient()
+	client, defaultProject, alias, err := resolveClient()
 	if err != nil {
 		return errResult(err.Error())
 	}
@@ -378,6 +470,15 @@ func handleIssueCreate(ctx context.Context, req *mcp.CallToolRequest, args issue
 		PriorityID:  priorityID,
 		Description: args.Description,
 		DueDate:     args.DueDate,
+		StartDate:   args.StartDate,
+	}
+
+	if args.Milestone != "" {
+		id, err := milestoneID(client, projectKey, args.Milestone)
+		if err != nil {
+			return errResult(err.Error())
+		}
+		opts.MilestoneIDs = []int{id}
 	}
 
 	// Resolve assignee
@@ -402,15 +503,24 @@ func handleIssueCreate(ctx context.Context, req *mcp.CallToolRequest, args issue
 		return errResult(err.Error())
 	}
 
-	return textResult(map[string]string{
+	r := map[string]string{
 		"issue_key": issue.IssueKey,
 		"summary":   issue.Summary,
+		"space":     alias,
 		"message":   fmt.Sprintf("%s を作成しました", issue.IssueKey),
-	})
+	}
+	warnIfStartDateIgnored(r, args.StartDate, issue.StartDate)
+	return textResult(r)
 }
 
 func handleIssueEdit(ctx context.Context, req *mcp.CallToolRequest, args issueEditArgs) (*mcp.CallToolResult, any, error) {
-	client, _, err := newClient()
+	if args.Unassign && args.AssigneeName != "" {
+		return errResult("assignee_name と unassign は同時に指定できません")
+	}
+	if args.ClearDueDate && args.DueDate != "" {
+		return errResult("due_date と clear_due_date は同時に指定できません")
+	}
+	client, _, alias, err := resolveClient()
 	if err != nil {
 		return errResult(err.Error())
 	}
@@ -481,8 +591,30 @@ func handleIssueEdit(ctx context.Context, req *mcp.CallToolRequest, args issueEd
 		}
 	}
 
+	if args.Unassign {
+		unassigned := 0
+		opts.AssigneeID = &unassigned
+	}
+
 	if args.DueDate != "" {
 		opts.DueDate = &args.DueDate
+	}
+
+	if args.ClearDueDate {
+		noDueDate := ""
+		opts.DueDate = &noDueDate
+	}
+
+	if args.StartDate != "" {
+		opts.StartDate = &args.StartDate
+	}
+
+	if args.Milestone != "" {
+		id, err := milestoneID(client, fmt.Sprintf("%d", issue.ProjectID), args.Milestone)
+		if err != nil {
+			return errResult(err.Error())
+		}
+		opts.MilestoneIDs = []int{id}
 	}
 
 	if args.Comment != "" {
@@ -496,16 +628,18 @@ func handleIssueEdit(ctx context.Context, req *mcp.CallToolRequest, args issueEd
 
 	r := map[string]string{
 		"issue_key": updated.IssueKey,
+		"space":     alias,
 		"message":   fmt.Sprintf("%s を更新しました", updated.IssueKey),
 	}
 	if updated.Status != nil {
 		r["status"] = updated.Status.Name
 	}
+	warnIfStartDateIgnored(r, args.StartDate, updated.StartDate)
 	return textResult(r)
 }
 
 func handleCommentAdd(ctx context.Context, req *mcp.CallToolRequest, args commentAddArgs) (*mcp.CallToolResult, any, error) {
-	client, _, err := newClient()
+	client, _, alias, err := resolveClient()
 	if err != nil {
 		return errResult(err.Error())
 	}
@@ -515,6 +649,7 @@ func handleCommentAdd(ctx context.Context, req *mcp.CallToolRequest, args commen
 	}
 	return textResult(map[string]any{
 		"comment_id": comment.ID,
+		"space":      alias,
 		"message":    fmt.Sprintf("%s にコメントを追加しました", args.IssueKey),
 	})
 }

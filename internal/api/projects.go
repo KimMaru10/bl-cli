@@ -19,7 +19,11 @@ func (c *Client) GetProjects() ([]Project, error) {
 
 // GetProject returns a single project.
 func (c *Client) GetProject(projectIDOrKey string) (*Project, error) {
-	data, err := c.get("/projects/"+projectIDOrKey, nil)
+	key, err := seg(projectIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/projects/"+key, nil)
 	if err != nil {
 		return nil, fmt.Errorf("プロジェクトの取得に失敗しました: %w", err)
 	}
@@ -32,7 +36,11 @@ func (c *Client) GetProject(projectIDOrKey string) (*Project, error) {
 
 // GetProjectUsers returns users belonging to a project.
 func (c *Client) GetProjectUsers(projectIDOrKey string) ([]User, error) {
-	data, err := c.get("/projects/"+projectIDOrKey+"/users", nil)
+	key, err := seg(projectIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/projects/"+key+"/users", nil)
 	if err != nil {
 		return nil, fmt.Errorf("プロジェクトユーザーの取得に失敗しました: %w", err)
 	}
@@ -45,7 +53,11 @@ func (c *Client) GetProjectUsers(projectIDOrKey string) ([]User, error) {
 
 // GetStatuses returns statuses for a project.
 func (c *Client) GetStatuses(projectIDOrKey string) ([]Status, error) {
-	data, err := c.get("/projects/"+projectIDOrKey+"/statuses", nil)
+	key, err := seg(projectIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/projects/"+key+"/statuses", nil)
 	if err != nil {
 		return nil, fmt.Errorf("ステータス一覧の取得に失敗しました: %w", err)
 	}
@@ -58,7 +70,11 @@ func (c *Client) GetStatuses(projectIDOrKey string) ([]Status, error) {
 
 // GetIssueTypes returns issue types for a project.
 func (c *Client) GetIssueTypes(projectIDOrKey string) ([]IssueType, error) {
-	data, err := c.get("/projects/"+projectIDOrKey+"/issueTypes", nil)
+	key, err := seg(projectIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/projects/"+key+"/issueTypes", nil)
 	if err != nil {
 		return nil, fmt.Errorf("課題種別一覧の取得に失敗しました: %w", err)
 	}
@@ -84,7 +100,11 @@ func (c *Client) GetPriorities() ([]Priority, error) {
 
 // GetMilestones returns milestones for a project.
 func (c *Client) GetMilestones(projectIDOrKey string) ([]Milestone, error) {
-	data, err := c.get("/projects/"+projectIDOrKey+"/versions", nil)
+	key, err := seg(projectIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/projects/"+key+"/versions", nil)
 	if err != nil {
 		return nil, fmt.Errorf("マイルストーン一覧の取得に失敗しました: %w", err)
 	}
@@ -97,7 +117,11 @@ func (c *Client) GetMilestones(projectIDOrKey string) ([]Milestone, error) {
 
 // GetCategories returns categories for a project.
 func (c *Client) GetCategories(projectIDOrKey string) ([]Category, error) {
-	data, err := c.get("/projects/"+projectIDOrKey+"/categories", nil)
+	key, err := seg(projectIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/projects/"+key+"/categories", nil)
 	if err != nil {
 		return nil, fmt.Errorf("カテゴリ一覧の取得に失敗しました: %w", err)
 	}

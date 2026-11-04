@@ -76,7 +76,11 @@ func (c *Client) GetIssues(opts *GetIssuesOptions) ([]Issue, error) {
 
 // GetIssue returns a single issue by key or ID.
 func (c *Client) GetIssue(issueIDOrKey string) (*Issue, error) {
-	data, err := c.get("/issues/"+issueIDOrKey, nil)
+	key, err := seg(issueIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/issues/"+key, nil)
 	if err != nil {
 		return nil, fmt.Errorf("課題の取得に失敗しました: %w", err)
 	}
@@ -168,7 +172,12 @@ func (c *Client) UpdateIssue(issueIDOrKey string, opts *UpdateIssueOptions) (*Is
 		params.Set("statusId", strconv.Itoa(*opts.StatusID))
 	}
 	if opts.AssigneeID != nil {
-		params.Set("assigneeId", strconv.Itoa(*opts.AssigneeID))
+		// Backlog clears the assignee on an empty value and rejects 0 as an unknown user.
+		assignee := ""
+		if *opts.AssigneeID != 0 {
+			assignee = strconv.Itoa(*opts.AssigneeID)
+		}
+		params.Set("assigneeId", assignee)
 	}
 	if opts.PriorityID != nil {
 		params.Set("priorityId", strconv.Itoa(*opts.PriorityID))
@@ -189,7 +198,11 @@ func (c *Client) UpdateIssue(issueIDOrKey string, opts *UpdateIssueOptions) (*Is
 		params.Set("comment", *opts.Comment)
 	}
 
-	data, err := c.patch("/issues/"+issueIDOrKey, params)
+	key, err := seg(issueIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.patch("/issues/"+key, params)
 	if err != nil {
 		return nil, fmt.Errorf("課題の更新に失敗しました: %w", err)
 	}
@@ -205,7 +218,11 @@ func (c *Client) AddComment(issueIDOrKey string, content string) (*Comment, erro
 	params := url.Values{}
 	params.Set("content", content)
 
-	data, err := c.post("/issues/"+issueIDOrKey+"/comments", params)
+	key, err := seg(issueIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.post("/issues/"+key+"/comments", params)
 	if err != nil {
 		return nil, fmt.Errorf("コメントの追加に失敗しました: %w", err)
 	}
@@ -226,7 +243,11 @@ func (c *Client) GetComments(issueIDOrKey string, count int, order string) ([]Co
 		params.Set("order", order)
 	}
 
-	data, err := c.get("/issues/"+issueIDOrKey+"/comments", params)
+	key, err := seg(issueIDOrKey)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.get("/issues/"+key+"/comments", params)
 	if err != nil {
 		return nil, fmt.Errorf("コメント一覧の取得に失敗しました: %w", err)
 	}
