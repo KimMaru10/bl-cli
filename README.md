@@ -34,27 +34,15 @@ $ bl issue view --web
 - **インタラクティブ UI** — プロジェクトや担当者をリストから選択。課題キーを覚えていなくても操作可能
 - **`--web` でブラウザ連携** — ターミナルからワンコマンドで Backlog の Web UI を開ける
 - **複数スペース対応** — 複数の Backlog スペースをエイリアスで一元管理。ワンコマンドで切り替え
-- **シングルバイナリ** — Go 製。依存なしでインストール・配布が簡単
+- **npm で導入** — `npm install -g` の 1 コマンドで使える
 
 ## インストール
-
-### npm（推奨）
 
 ```bash
 npm install -g @kimmaru10/bl-cli
 ```
 
-### GitHub Releases
-
-[Releases](https://github.com/KimMaru10/bl-cli/releases) からお使いの OS に合ったバイナリをダウンロードしてください。
-
-### Go
-
-```bash
-go install github.com/KimMaru10/bl-cli@latest
-```
-
-Go 1.26 以上が必要です（Go 1.21 以降なら必要なツールチェインが自動で取得されます）。
+対応環境は macOS / Linux（amd64 / arm64）です。
 
 ## セットアップ
 
@@ -295,17 +283,7 @@ Claude Desktop で「Backlog の課題一覧を見せて」のように話しか
 
 ## 開発
 
-```bash
-# クローン
-git clone https://github.com/KimMaru10/bl-cli.git
-cd bl-cli
-
-# ビルド
-go build -o bl .
-
-# 実行
-./bl --help
-```
+開発に参加する場合は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 ## ライセンス
 

@@ -33,4 +33,3 @@ assignees: ""
 - OS: (例: macOS 14.0 / Ubuntu 22.04)
 - アーキテクチャ: (例: arm64 / amd64)
 - bl-cli バージョン: (`bl --version` の出力)
-- インストール方法: (npm / GitHub Releases / go install)

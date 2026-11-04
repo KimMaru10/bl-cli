@@ -45,6 +45,9 @@ cmd/           CLI コマンド（Cobra）
 internal/api/  Backlog API クライアント
 internal/tui/  TUI コンポーネント（Bubble Tea）
 internal/git/  Git 連携
+internal/config/   認証・スペース設定
+internal/cmdutil/  コマンド共通処理
+internal/browser/  ブラウザ起動
 ```
 
 ### コミットメッセージ
