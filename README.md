@@ -260,7 +260,7 @@ spaces:
 
 ## Claude Desktop 連携（MCP）
 
-Claude Desktop から Backlog の課題を直接操作できます。
+Claude Desktop から Backlog を操作できます。CLI の機能は、下記の「MCP との違い」を除いてすべて MCP でも使えます。
 
 ```bash
 # Claude Desktop に自動登録
@@ -271,15 +271,41 @@ bl mcp setup
 
 | ツール | 機能 |
 |--------|------|
+| `auth_status` | スペースごとの認証状態（API キーは返しません） |
+| `auth_switch` | スペースを切り替え |
 | `project_list` | プロジェクト一覧 |
-| `issue_list` | 課題一覧（ステータス・キーワード・担当者で絞り込み） |
-| `issue_view` | 課題詳細 |
+| `project_current` / `project_set` | デフォルトプロジェクトの表示・設定 |
+| `project_meta` | ステータス・課題種別・カテゴリ・マイルストーンの一覧 |
+| `issue_list` | 課題一覧（ステータス・担当者・マイルストーン・親課題・キーワードで絞り込み） |
+| `issue_view` | 課題詳細（カスタム属性・親課題・添付ファイル一覧を含む） |
 | `issue_create` | 課題作成 |
 | `issue_edit` | 課題更新 |
-| `comment_add` | コメント追加 |
-| `comment_list` | コメント一覧 |
+| `issue_attachment_download` | 課題の添付ファイルを保存 |
+| `issue_key_from_branch` | git ブランチ名から課題キーを推測 |
+| `comment_add` / `comment_list` | コメントの追加・一覧 |
+| `doc_tree` / `doc_list` / `doc_view` | ドキュメントのツリー・一覧・本文 |
+| `doc_attachment_download` | ドキュメントの添付ファイルを保存 |
+| `wiki_list` / `wiki_view` | Wiki の一覧・本文 |
+| `file_list` / `file_download` | 共有ファイルの一覧・保存 |
+| `repo_list` | Backlog Git リポジトリ一覧 |
+| `pr_list` / `pr_view` | Backlog Git プルリクエストの一覧・詳細 |
 
-Claude Desktop で「Backlog の課題一覧を見せて」のように話しかけると、自動的にツールが呼ばれます。
+Claude Desktop で「Backlog の課題一覧を見せて」「仕様のドキュメントを読んで」のように話しかけると、自動的にツールが呼ばれます。
+
+`issue_list` と `issue_view` は `web` を指定するとブラウザで開きます。
+
+### MCP との違い
+
+| 項目 | MCP での扱い |
+|------|-------------|
+| `bl auth login` | 使えません。API キーが AI とのやり取りを通らないよう、ターミナルで実行してください |
+| `bl auth logout` | 使えません。Backlog 上の文章に仕込まれた指示で認証情報を消されないよう、ターミナルで実行してください |
+| スペースとデフォルトプロジェクトの変更 | `auth_switch` と `project_set` は MCP サーバーの起動中だけ有効で、CLI の設定は変わりません。起動時の値はターミナルの `bl auth switch` と `bl project set` で変更します |
+| `bl mcp` / `bl mcp setup` | MCP からは使えません |
+| ダウンロードの保存先 | `~/Downloads/bl` に固定です（`--output` に相当する指定はありません） |
+| 課題キーの省略 | できません。`issue_key_from_branch` で確認してから指定します（MCP サーバーの作業フォルダが git リポジトリの場合のみ使えます。Claude Desktop では多くの場合使えません） |
+| 絞り込み条件の名前 | 一致しないとエラーになります |
+| 担当者と期日の解除 | `issue_edit` の `unassign` と `clear_due_date` で行います |
 
 ## 開発
 
